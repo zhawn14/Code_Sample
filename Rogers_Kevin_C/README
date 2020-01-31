@@ -1,0 +1,21 @@
+Makefile    :   type 'make' to build code; will build all '*.h' and '*.c' file
+
+main        :   run './main' to execute code with 2 test cases
+
+control.c   :   source with message parsing function
+control.h
+
+main.c      :   contains sample case
+_________________________________________________________________________________
+
+Code: C
+
+Summary:
+Goal was to create a utility to run in a multi threaded application to parse
+data messages.
+
+##################################Instructions###################################
+This requires 'gcc' with ability to run 'make'
+1.  Open terminal
+2.  type 'make'
+3.  this should have compiled 'control.o' with 'main.o' into 'main'

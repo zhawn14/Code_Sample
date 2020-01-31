@@ -1,0 +1,94 @@
+#!/usr/bin/python
+#Python 2.7
+
+import numpy as np
+
+###############################################################################
+
+class range_filter:   
+# =============================================================================
+#     #Summary
+#       Constructs a range_filter type of size N with range_min and range_max.
+#     #ARGS
+#       n - Size of expected input LIDAR Scan; passed to N
+#       min - minimum value to filter on; passed to range_min
+#       max - maximum value to filter on; passed to range_max
+# =============================================================================
+    def __init__(self, n, min, max):
+        self.N = n                          #LIDAR scan size
+        self.range_min = min                #filter min range
+        self.range_max = max                #filter max range
+
+# =============================================================================
+#     #Summary
+#       Takes in Scan, and copies values to newScan whilst filtering any values
+#       too small or large.
+#     #ARGS
+#       Scan - numpy array of size N
+# =============================================================================
+    def update(self, Scan):
+        newScan = np.empty(self.N, dtype=float)
+
+        for i in range(self.N):                 #iterates over Scan
+            if(Scan[i] < self.range_min):       #parse min value to range_min
+                newScan[i] = self.range_min
+            elif(Scan[i] > self.range_max):     #parse max value to range_max
+                newScan[i] = self.range_max
+            else:
+                newScan[i] = Scan[i]            #copy Scan value to newScan
+        
+        return newScan                          #return filtered newScan
+
+###############################################################################
+        
+class temporal_median_filter:
+# =============================================================================
+#     #Summary
+#       Constructs a temporal_median_filter type which stores D LIDAR Scans at 
+#       a fixed length of N. This filter will calculate the median of all
+#       Scans.
+#     #ARGS
+#       depth - number or most recent Scans to save; passed to D
+#       size - fixed size of each LIDAR Scan; passed to N
+# =============================================================================
+    def __init__(self, size, depth):
+        self.D = depth                                              #number of scans saved
+        self.N = size                                               #LIDAR scan size
+        self._ptr = 0                                               #points to next data to stomp on in Scans
+        self._flg = 0                                               #flag = when to on stomp data
+        self.Scans = np.empty((self.N, (self.D + 1)), dtype=float)  #saved Scans for filter
+
+# =============================================================================
+#     #Summary
+#       Takes in a Scan and copies values to Scans[_ptr]. The median is then
+#       calculated from Scans[n,0] to Scans[n,D] and returned as Median[n].
+#       
+#       Scans stores up to D previous Scan. Once full, Scans follows a FIFO
+#       storage logic. _ptr indicates the next Scan to be stomped on.
+#     #ARGS
+#       Scan - numpy array of size N of LIDAR measurements
+# =============================================================================
+    def update(self, Scan):
+        Median = np.zeros(self.N, dtype=float)
+
+        for n in range(self.N):                     #iterates over Scan
+            self.Scans[n, self._ptr] = Scan[n]      #copy Scan into Scans
+            
+            if(self._flg < 1 ):                     #if Scans is full
+                d = self._ptr - self.D              #set d = excluded col
+                x = self.Scans[n , :d]              #grab data minus d col
+                
+            else:                                   #else Scans is empty
+                x = self.Scans[n , :]               #grab all data
+                                      
+            Median[n] = np.median(x)                #get/load Median[n]
+
+        self._ptr += 1                              #increment _ptr
+        
+        if(self._ptr > self.D):                     #if _ptr reaches depth
+            self._ptr = 0                           #spin back to zero
+            
+        if(self._ptr >= self.D):                    #if _ptr reaches depth
+            self._flg = 1                           #Scans is full; set _flg
+
+        return Median
